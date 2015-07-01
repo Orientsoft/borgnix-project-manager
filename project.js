@@ -18,7 +18,7 @@ var Project = function (pm, uuid, type, name) {
   self.pm = pm
 
   if (!fs.existsSync(self.dir)) {
-    fs.mkdirSync(self.dir)
+    fs.mkdirsSync(self.dir)
   }
 
   if (!fs.existsSync(self.configFile)) {
@@ -41,8 +41,12 @@ Project.prototype.delete = function (cb) {
   this.pm.deleteProject(this.owner, this.type, this.name)
 }
 
+Project.prototype.toJson = function (cb) {
+  return _.omit(this, ['dir', 'configFile', 'pm'])
+}
+
 Project.prototype.toJsonString = function () {
-  return JSON.stringify(_.omit(this, ['dir', 'configFile', 'pm']), null, 2)
+  return JSON.stringify(_.omit(this, ['dir', 'configFile', 'pm']))
 }
 
 Project.prototype.getFileNames = function (cb) {
@@ -168,18 +172,25 @@ BPM.prototype.findProject = function (uuid, type, name) {
 BPM.prototype.getProjects = function (uuid, types, cb) {
   var self = this
   var projects = []
-  for (var type of types) {
-    var root = path.join(this.root, uuid, type)
-    fs.readdirSync(root).forEach(function (name) {
-      if (fs.statSync(path.resolve(root, name)).isDirectory()) {
-        if (self.findProject(uuid, type, name))
-          projects.push(self.findProject(uuid, type, name))
-        else
-          projects.push(new Project(self, uuid, type, name))
-      }
-    })
+  if (!_.isArray(types)) types = [types]
+
+  try {
+    for (var type of types) {
+      var root = path.join(this.root, uuid, type)
+      fs.readdirSync(root).forEach(function (name) {
+        if (fs.statSync(path.resolve(root, name)).isDirectory()) {
+          if (self.findProject(uuid, type, name))
+            projects.push(self.findProject(uuid, type, name))
+          else
+            projects.push(new Project(self, uuid, type, name))
+        }
+      })
+    }
+    butil.call(cb, null, projects)
   }
-  butil.call(cb, projects)
+  catch (e) {
+    butil.call(cb, e)
+  }
 }
 
 module.exports = function (root) {
