@@ -60,6 +60,7 @@ router.post('/project/files', function (req, res) {
   })
 })
 
+// delete project files
 router.delete('/project/files', function (req, res) {
   if (!validation(req.query.uuid, req.query.token))
     return res.send('unauthorized')

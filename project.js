@@ -7,6 +7,7 @@ var fs = require('fs-extra')
   , deepcopy = require('deepcopy')
 
 var Project = function (pm, uuid, type, name) {
+  console.log('inside')
   var self = this
 
   self.dir = path.join(pm.root, uuid, type, name)
@@ -31,6 +32,7 @@ var Project = function (pm, uuid, type, name) {
   }
 
   self.files = self.getFileNames()
+  self.init()
 
   if (!pm.projects[uuid]) pm.projects[uuid] = {}
   if (!pm.projects[uuid][type]) pm.projects[uuid][type] = {}
@@ -118,6 +120,26 @@ Project.prototype.deleteFiles = function (files, cb) {
   }
 }
 
+Project.prototype.init = function () {
+  console.log('INIT', this.type)
+  switch (this.type) {
+    case 'arduino':
+      return this.initArduino()
+      break
+    default:
+      return
+      break
+  }
+}
+
+Project.prototype.initArduino = function () {
+  this.arduino = {}
+  this.arduino.inoTpl = path.join(__dirname, 'test', 'tpl.ino')
+  fs.copySync(this.arduino.inoTpl, path.join(this.dir, this.name+'.ino'))
+  this.ignore.push('makefile')
+  this.ignore.push('build*')
+}
+
 var BPM = function (root) {
   this.root = root ? root : __dirname
   this.projects = {}
@@ -193,6 +215,4 @@ BPM.prototype.getProjects = function (uuid, types, cb) {
   }
 }
 
-module.exports = function (root) {
-  return new BPM(root)
-}
+module.exports = BPM

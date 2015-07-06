@@ -39,21 +39,21 @@ var path = require('path')
 //   console.log(body)
 // })
 
-var delFile = {
-  root: ''
-, name: 'newFile.cpp'
-}
-request.del({ url: 'http://127.0.0.1:3000/p/project/files'
-            , qs: {
-                uuid: 'uuid'
-              , token: 'token'
-              , type: 'arduino'
-              , name: 'remote-sketch3'
-            }
-            ,body: delFile
-            , json: true}, function (err, res, body) {
-  console.log(body)
-})
+// var delFile = {
+//   root: ''
+// , name: 'newFile.cpp'
+// }
+// request.del({ url: 'http://127.0.0.1:3000/p/project/files'
+//             , qs: {
+//                 uuid: 'uuid'
+//               , token: 'token'
+//               , type: 'arduino'
+//               , name: 'remote-sketch3'
+//             }
+//             ,body: delFile
+//             , json: true}, function (err, res, body) {
+//   console.log(body)
+// })
 
 
 // request.del({ url: 'http://127.0.0.1:3000/p/project/files'
