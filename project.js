@@ -24,6 +24,7 @@ var Project = function (pm, uuid, type, name) {
 
   if (!fs.existsSync(self.configFile)) {
     fs.writeFileSync(self.configFile, self.toJsonString())
+    self.init()
   }
   else {
     var config = require(self.configFile)
@@ -32,7 +33,10 @@ var Project = function (pm, uuid, type, name) {
   }
 
   self.files = self.getFileNames()
-  self.init()
+  self.getFiles(function (err, files) {
+    // self.files = files
+    if (err) console.error(err)
+  })
 
   if (!pm.projects[uuid]) pm.projects[uuid] = {}
   if (!pm.projects[uuid][type]) pm.projects[uuid][type] = {}
@@ -52,6 +56,7 @@ Project.prototype.toJsonString = function () {
 }
 
 Project.prototype.getFileNames = function (cb) {
+  console.log(this.ignore)
   var self = this
     , ig = ignore().addPattern(self.ignore)
     , files = []
@@ -84,9 +89,10 @@ Project.prototype.getFiles = function (cb) {
     , files = deepcopy(self.files)
 
   for (var file of files) {
-    file.content = fs.readFileSync(path.join(self.dir, file.root, file.name))
+    file.content = fs.readFileSync(path.join(self.dir, file.root || '', file.name))
                      .toString()
   }
+  self.files = files
 
   butil.call(cb, null, files)
 }
@@ -95,11 +101,12 @@ Project.prototype.saveFiles = function (files, cb) {
   try {
     if (!_.isArray(files)) files = [files]
     for (var file of files) {
-      var filePath = path.join(this.dir, file.root, file.name)
-      fs.mkdirsSync(path.join(this.dir, file.root))
+      var filePath = path.join(this.dir, file.root || '', file.name)
+      fs.mkdirsSync(path.join(this.dir, file.root || ''))
       fs.writeFileSync(filePath, file.content)
     }
-    butil.call(cb, null)
+    // butil.call(cb, null)
+    this.getFiles(cb)
   }
   catch (e) {
     butil.call(cb, e)
@@ -110,10 +117,11 @@ Project.prototype.deleteFiles = function (files, cb) {
   try {
     if (!_.isArray(files)) files = [files]
     for (var file of files) {
-      fs.deleteSync(path.join(this.dir, file.root, file.name))
+      fs.deleteSync(path.join(this.dir, file.root || '', file.name))
     }
     this.files = this.getFileNames()
-    butil.call(cb, null)
+    // butil.call(cb, null)
+    this.getFiles(cb)
   }
   catch (e) {
     butil.call(cb, e)
