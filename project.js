@@ -23,8 +23,8 @@ var Project = function (pm, uuid, type, name) {
   }
 
   if (!fs.existsSync(self.configFile)) {
-    fs.writeFileSync(self.configFile, self.toJsonString())
     self.init()
+    fs.writeFileSync(self.configFile, self.toJsonString())
   }
   else {
     var config = require(self.configFile)
@@ -188,15 +188,18 @@ BPM.prototype.deleteProject = function (uuid, type, name, cb) {
 
 BPM.prototype.findProject = function (uuid, type, name) {
   try {
-    if (this.projects[uuid][type][name])
+    if (this.projects[uuid][type][name]) {
       return this.projects[uuid][type][name]
+    }
   }
-  catch (e) {
-    if (fs.existsSync(path.join(this.root, uuid, type, name)))
-      return new Project(this, uuid, type, name)
+  catch (e) {}
+
+  if (fs.existsSync(path.join(this.root, uuid, type, name))) {
+    return new Project(this, uuid, type, name)
   }
-
-
+  else {
+    return null
+  }
 }
 
 BPM.prototype.getProjects = function (uuid, types, cb) {
