@@ -27,7 +27,12 @@ Client.prototype.newProject = function (opt, cb) {
 }
 
 Client.prototype.deleteProject = function (opt, cb) {
-  // body...
+  $.ajax({
+    url: this.host + this.prefix + this.endpoints.deleteProject
+  , method: 'DELETE'
+  , data: opt
+  , success: cb
+  })
 }
 
 Client.prototype.saveFiles = function (opt, cb) {
