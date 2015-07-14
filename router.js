@@ -8,6 +8,8 @@ var express = require('express')
       return true
     }
 
+bpm.arduinoLibs = '/Users/eddie/Documents/Arduino/libraries'
+
 // create new project
 router.put('/project', function (req, res) {
   if (!validation(req.body.uuid, req.body.token))
@@ -16,7 +18,7 @@ router.put('/project', function (req, res) {
                 , function (err, project) {
     console.error('err', err)
     if (err) return res.json({status: 1, content: err.toString()})
-    console.log('proj', project.toJson())
+    // console.log('proj', project.toJson())
     res.json(project.toJson())
   })
 })
@@ -35,17 +37,17 @@ router.delete('/project', function (req, res) {
 
 // get projects list
 router.get('/projects', function (req, res) {
-  console.log(req.body)
+  // console.log(req.body)
   res.setHeader('Last-Modified', (new Date()).toUTCString())
   if (!validation(req.query.uuid, req.query.token))
     return res.send('unauthorized')
   bpm.getProjects(req.query.uuid, req.query.type, function (err, projects) {
-    console.log(err, projects)
+    // console.log(err, projects)
     if (err) return res.json({status: 1, content: err})
     var send = projects.map(function (project) {
       return project.toJson()
     }, [])
-    console.log(send)
+    // console.log(send)
     res.json(send)
   })
 })
@@ -58,9 +60,9 @@ router.post('/project/files', function (req, res) {
   var project = bpm.findProject(req.body.uuid, req.body.type, req.body.name)
   if (!project) return res.json({status: 1, content: 'Project not found'})
   // console.log(project)
-  console.log(req.body)
+  // console.log(req.body)
   req.body.files = JSON.parse(req.body.files)
-  console.log(req.body.files)
+  // console.log(req.body.files)
   project.saveFiles(req.body.files, function (err, files) {
     project.files = files
     if (err) {
@@ -75,9 +77,10 @@ router.post('/project/files', function (req, res) {
 router.delete('/project/files', function (req, res) {
   if (!validation(req.body.uuid, req.body.token))
     return res.send('unauthorized')
+  console.log('***', req.body)
   var project = bpm.findProject(req.body.uuid, req.body.type, req.body.name)
   if (!project) return res.json({status: 1, content: 'Project not found'})
-  project.deleteFiles(req.body.files, function (err) {
+  project.deleteFiles(JSON.parse(req.body.files), function (err) {
     if (err) return res.json({status: 1, content: err.toString()})
     else return res.json({status: 0})
   })

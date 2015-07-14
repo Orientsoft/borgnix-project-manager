@@ -52,7 +52,17 @@ Client.prototype.saveFiles = function (opt, cb) {
 }
 
 Client.prototype.deleteFiles = function (opt, cb) {
-  // body...
+  $.ajax({
+    url: this.host + this.prefix + this.endpoints.deleteFiles
+  , method: 'DELETE'
+  , data: {
+      uuid: opt.uuid
+    , token: opt.token
+    , type: opt.type
+    , name: opt.name
+    , files: JSON.stringify(opt.files)
+    }
+  })
 }
 
 Client.prototype.listProject = function (opt, cb) {
