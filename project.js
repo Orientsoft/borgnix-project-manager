@@ -157,8 +157,9 @@ Project.prototype.initArduino = function () {
   this.ignore.push('build*')
 }
 
-var BPM = function (root) {
-  this.root = root ? root : __dirname
+var BPM = function (opt) {
+  _.extend(this, opt)
+  this.root = opt.root ? opt.root : path.join(__dirname, 'temp')
   this.projects = {}
 }
 
@@ -222,20 +223,10 @@ BPM.prototype.getProjects = function (uuid, types, cb) {
       var root = path.join(this.root, uuid, type)
 
       if (type === 'arduino') {
-        console.log('*** ARDUINO', path.join(root, 'libraries'))
         if (!fs.existsSync(path.join(root, 'libraries'))) {
-          console.log(path.join(root, 'libraries'), 'creating')
           this.initArduinoDir(uuid)
         }
-        else {
-          console.log(path.join(root, 'libraries'), 'exists')
-        }
       }
-      else {
-        console.log('*** not arduino')
-      }
-
-      console.log('continue')
 
       fs.readdirSync(root).forEach(function (name) {
         if (fs.statSync(path.resolve(root, name)).isDirectory()) {

@@ -3,12 +3,10 @@ var express = require('express')
   , path = require('path')
   , _ = require('underscore')
   , BPM = require('./project')
-  , bpm = new BPM(path.join(__dirname, 'temp'))
+  , bpm
   , validation = function () {
       return true
     }
-
-bpm.arduinoLibs = '/Users/eddie/Documents/Arduino/libraries'
 
 // create new project
 router.put('/project', function (req, res) {
@@ -18,7 +16,6 @@ router.put('/project', function (req, res) {
                 , function (err, project) {
     console.error('err', err)
     if (err) return res.json({status: 1, content: err.toString()})
-    // console.log('proj', project.toJson())
     res.json(project.toJson())
   })
 })
@@ -86,7 +83,19 @@ router.delete('/project/files', function (req, res) {
   })
 })
 
-module.exports = function (auth) {
-  if (_.isFunction(auth)) validation = auth
+module.exports = function (config) {
+  var opt = {}
+  if (config.projectRoot)
+    opt.root = config.projectRoot
+  else
+    throw new Error('config.projectRoot is missing')
+
+  if (config.arduinoLibs)
+    opt.arduinoLibs = config.arduinoLibs
+  else
+    throw new Error('config.arduinoLibs is missing')
+
+  bpm = new BPM(opt)
+  if (_.isFunction(opt.auth)) validation = config.auth
   return router
 }
