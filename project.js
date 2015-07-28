@@ -109,7 +109,10 @@ Project.prototype.saveFiles = function (files, cb) {
       file.root = file.root || ''
       var filePath = path.join(this.dir, file.root, file.name)
       // this.files.push(file)
-      if (!_.has(oldFiles, file.name)) this.files.push(file)
+      if (oldFiles.indexOf(file.name) === -1) {
+        // console.log(oldFiles, file.name)
+        this.files.push(file)
+      }
       fs.mkdirsSync(path.join(this.dir, file.root))
       fs.writeFileSync(filePath, file.content)
     }
