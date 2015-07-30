@@ -1,5 +1,4 @@
-// import $ from 'jquery'
-var $ = require('jquery')
+import $ from 'jquery'
 
 var Client = function (opt) {
   this.host = opt.host
@@ -79,5 +78,4 @@ Client.prototype.listProject = function (opt, cb) {
   })
 }
 
-// export default Client
-module.exports = Client
+export default Client
