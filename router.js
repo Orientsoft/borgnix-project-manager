@@ -10,9 +10,7 @@ var express = require('express')
 
 // create new project
 router.put('/project', function (req, res) {
-  if (!validation(req.body.uuid, req.body.token))
-    return res.send('unauthorized')
-  bpm.newProject( req.body.uuid, req.body.type, req.body.name
+  bpm.newProject( req.session.user.uid, req.body.type, req.body.name
                 , function (err, project) {
     console.error('err', err)
     if (err) return res.json({status: 1, content: err.toString()})
@@ -22,9 +20,7 @@ router.put('/project', function (req, res) {
 
 // delete project
 router.delete('/project', function (req, res) {
-  if (!validation(req.body.uuid, req.body.token))
-    return res.send('unauthorized')
-  bpm.deleteProject( req.body.uuid, req.body.type, req.body.name
+  bpm.deleteProject( req.session.user.uid, req.body.type, req.body.name
                 , function (err) {
     console.log('err', err)
     if (err) return res.json({status: 1, content: err.toString()})
@@ -36,9 +32,7 @@ router.delete('/project', function (req, res) {
 router.get('/projects', function (req, res) {
   // console.log(req.body)
   res.setHeader('Last-Modified', (new Date()).toUTCString())
-  if (!validation(req.query.uuid, req.query.token))
-    return res.send('unauthorized')
-  bpm.getProjects(req.query.uuid, req.query.type, function (err, projects) {
+  bpm.getProjects(req.session.user.uid, req.query.type, function (err, projects) {
     // console.log(err, projects)
     if (err) return res.json({status: 1, content: err})
     var send = projects.map(function (project) {
@@ -51,10 +45,8 @@ router.get('/projects', function (req, res) {
 
 // save project files
 router.post('/project/files', function (req, res) {
-  if (!validation(req.body.uuid, req.body.token))
-    return res.send('unauthorized')
   // console.log(req.body.files, typeof req.body.files)
-  var project = bpm.findProject(req.body.uuid, req.body.type, req.body.name)
+  var project = bpm.findProject(req.session.user.uid, req.body.type, req.body.name)
   if (!project) return res.json({status: 1, content: 'Project not found'})
   // console.log(project)
   // console.log(req.body)
@@ -72,10 +64,8 @@ router.post('/project/files', function (req, res) {
 
 // delete project files
 router.delete('/project/files', function (req, res) {
-  if (!validation(req.body.uuid, req.body.token))
-    return res.send('unauthorized')
   console.log('***', req.body)
-  var project = bpm.findProject(req.body.uuid, req.body.type, req.body.name)
+  var project = bpm.findProject(req.session.user.uid, req.body.type, req.body.name)
   if (!project) return res.json({status: 1, content: 'Project not found'})
   project.deleteFiles(JSON.parse(req.body.files), function (err) {
     if (err) return res.json({status: 1, content: err.toString()})
