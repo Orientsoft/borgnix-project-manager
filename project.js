@@ -1,6 +1,6 @@
 var fs = require('fs-extra')
   , path = require('path')
-  , _ = require('underscore')
+  , _ = require('lodash')
   , butil = require('./util')
   , ignore = require('ignore')
   , walk = require('walk')
@@ -8,19 +8,35 @@ var fs = require('fs-extra')
 
 require('shelljs/global')
 
-var Project = function (pm, uuid, type, name) {
+var Project = function (pm, uuid, type, name, tpl) {
   var self = this
 
-  self.dir = path.join(pm.root, uuid, type, name)
-  self.configFile = path.join(self.dir, 'project.json')
-  self.name = name
-  self.type = type
-  self.owner = uuid
-  self.ignore = ['project.json']
-  self.pm = pm
+  _.assign(self, {
+    dir: path.join(pm.root, uuid, type, name)
+  , configFile: path.join(pm.root, uuid, type, name, 'project.json')
+  , name: name
+  , type: type
+  , owner: uuid
+  , ignore: ['project.json']
+  , pm: pm
+  })
 
   if (!fs.existsSync(self.dir)) {
-    fs.mkdirsSync(self.dir)
+    // console.log('tpl is', tpl)
+    tpl = _.isString(tpl) ? tpl : 'default'
+    if (tpl !== 'default')
+      tpl = fs.existsSync(path.join(pm.tplDir, type, tpl)) ? tpl : 'default'
+
+    var tplDir = path.join(pm.tplDir, type, tpl)
+
+    // console.log('tpldir is', tplDir)
+    fs.copySync(tplDir, self.dir)
+    // fs.renameSync(path.join(tplDir))
+    fs.readdirSync(self.dir).map(function(filename) {
+      if (_.contains(filename, tpl))
+        fs.renameSync( path.join(self.dir, filename)
+                     , path.join(self.dir, filename.replace(tpl, name)))
+    })
   }
 
   if (!fs.existsSync(self.configFile)) {
@@ -39,9 +55,7 @@ var Project = function (pm, uuid, type, name) {
     if (err) console.error(err)
   })
 
-  if (!pm.projects[uuid]) pm.projects[uuid] = {}
-  if (!pm.projects[uuid][type]) pm.projects[uuid][type] = {}
-  pm.projects[uuid][type][name] = self
+  _.set(pm, 'projects.' + uuid + '.' + type + '.' + name, self)
 }
 
 Project.prototype.delete = function (cb) {
@@ -140,7 +154,7 @@ Project.prototype.deleteFiles = function (files, cb) {
   }
 }
 
-Project.prototype.init = function () {
+Project.prototype.init = function (tpl) {
   console.log('INIT', this.type)
   switch (this.type) {
     case 'arduino':
@@ -152,10 +166,10 @@ Project.prototype.init = function () {
   }
 }
 
-Project.prototype.initArduino = function () {
+Project.prototype.initArduino = function (tpl) {
   this.arduino = {}
-  this.arduino.inoTpl = path.join(__dirname, 'test', 'tpl.ino')
-  fs.copySync(this.arduino.inoTpl, path.join(this.dir, this.name+'.ino'))
+  // this.arduino.inoTpl = path.join(__dirname, 'test', 'tpl.ino')
+  // fs.copySync(this.arduino.inoTpl, path.join(this.dir, this.name+'.ino'))
   this.ignore.push('makefile')
   this.ignore.push('build*')
 }
@@ -163,6 +177,7 @@ Project.prototype.initArduino = function () {
 var BPM = function (opt) {
   _.extend(this, opt)
   this.root = opt.root ? opt.root : path.join(__dirname, 'temp')
+  this.tplDir = opt.tplDir ? opt.tplDir : path.join(__dirname, 'project-tpl')
   this.projects = {}
 }
 
@@ -179,15 +194,16 @@ BPM.prototype.loadConfig = function (cofigFile, cb) {
   }
 }
 
-BPM.prototype.newProject = function (uuid, type, name, cb) {
+BPM.prototype.newProject = function (uuid, type, name, tpl, cb) {
   if (!uuid) return butil.call(cb, new Error('uuid required'))
   if (!type) return butil.call(cb, new Error('type required'))
   if (!name) return butil.call(cb, new Error('name required'))
+  if (_.isFunction(tpl)) cb = tpl
   var dir = path.join(this.root, uuid, type, name)
 
   if (fs.existsSync(dir))
     return butil.call(cb, new Error('project already exists'))
-  butil.call(cb, null, new Project(this, uuid, type, name))
+  butil.call(cb, null, new Project(this, uuid, type, name, tpl))
 }
 
 BPM.prototype.deleteProject = function (uuid, type, name, cb) {
@@ -266,6 +282,13 @@ BPM.prototype.initArduinoDir = function (uuid) {
     }
   })
   return null
+}
+
+BPM.prototype.getTpls = function (type) {
+  var tpls = fs.readdirSync(path.join(this.tplDir, type)).map(function (dir) {
+    return { name: dir }
+  })
+  return tpls
 }
 
 module.exports = BPM

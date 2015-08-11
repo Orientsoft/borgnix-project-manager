@@ -10,7 +10,8 @@ var express = require('express')
 
 // create new project
 router.put('/project', function (req, res) {
-  bpm.newProject( req.session.user.uid, req.body.type, req.body.name
+  console.log(req.body)
+  bpm.newProject( req.session.user.uid, req.body.type, req.body.name, req.body.tpl
                 , function (err, project) {
     console.error('err', err)
     if (err) return res.json({status: 1, content: err.toString()})
@@ -71,6 +72,10 @@ router.delete('/project/files', function (req, res) {
     if (err) return res.json({status: 1, content: err.toString()})
     else return res.json({status: 0})
   })
+})
+
+router.get('/templates', function (req, res) {
+  res.json(bpm.getTpls(req.query.type))
 })
 
 module.exports = function (config) {

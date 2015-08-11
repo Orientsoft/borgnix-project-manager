@@ -10,6 +10,7 @@ var Client = function (opt) {
   , listProject: '/projects'
   , saveFiles: '/project/files'
   , deleteFiles: '/project/files'
+  , listTpls: '/templates'
   }
 }
 
@@ -22,6 +23,7 @@ Client.prototype.newProject = function (opt, cb) {
     , token: opt.token
     , type: opt.type
     , name: opt.name
+    , tpl: opt.tpl
     }
   , success: cb
   })
@@ -74,6 +76,17 @@ Client.prototype.listProject = function (opt, cb) {
       uuid: opt.uuid
     , token: opt.token
     , type: opt.type
+    }
+  , success: cb
+  })
+}
+
+Client.prototype.listTpls = function (type, cb) {
+  $.ajax({
+    url: this.host + this.prefix + this.endpoints.listTpls
+  , method: 'GET'
+  , data:{
+      type: type
     }
   , success: cb
   })

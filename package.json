@@ -25,6 +25,7 @@
     "fs-extra": "^0.20.1",
     "ignore": "^2.2.15",
     "jquery": "^2.1.4",
+    "lodash": "^3.10.1",
     "shelljs": "^0.5.1",
     "underscore": "^1.8.3",
     "walk": "^2.3.9"
