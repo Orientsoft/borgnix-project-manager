@@ -22,7 +22,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-var project = require('../router')(path.join(__dirname, '..', 'temp'))
+var project = require('../router')(
+  { projectRoot: path.join(__dirname, '../temp')
+  , arduinoLibs: path.join(__dirname, '../project-tpl')
+  })
 app.use('/', routes);
 app.use('/users', users);
 app.use('/p', project)

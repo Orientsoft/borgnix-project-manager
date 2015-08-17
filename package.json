@@ -26,7 +26,9 @@
     "ignore": "^2.2.15",
     "jquery": "^2.1.4",
     "lodash": "^3.10.1",
+    "request": "^2.60.0",
     "shelljs": "^0.5.1",
+    "tough-cookie": "^2.0.0",
     "underscore": "^1.8.3",
     "walk": "^2.3.9"
   },
