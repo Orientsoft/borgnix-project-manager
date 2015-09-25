@@ -26,6 +26,7 @@
     "ignore": "^2.2.15",
     "jquery": "^2.1.4",
     "lodash": "^3.10.1",
+    "nedb": "^1.2.0",
     "request": "^2.60.0",
     "shelljs": "^0.5.1",
     "tough-cookie": "^2.0.0",
@@ -33,7 +34,9 @@
     "walk": "^2.3.9"
   },
   "devDependencies": {
+    "chai": "^3.3.0",
     "gulp": "^3.9.0",
-    "minimist": "^1.1.1"
+    "minimist": "^1.1.1",
+    "sinon": "^1.17.0"
   }
 }

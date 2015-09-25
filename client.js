@@ -65,6 +65,7 @@ Client.prototype.deleteFiles = function (opt, cb) {
     , name: opt.name
     , files: JSON.stringify(opt.files)
     }
+  , success: cb
   })
 }
 
