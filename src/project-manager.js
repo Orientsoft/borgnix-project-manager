@@ -1,12 +1,20 @@
 "use strict"
 
-let fs = require('fs-extra')
+let fs = require('fs-extra-promise')
   , _ = require('lodash')
   , path = require('path')
   , walk = require('walk')
   , utils = require('./utils')
   , ignore = require('ignore')
   , EventEmitter = require('events').EventEmitter
+  , debug = require('debug')('debug')
+  , DirMan = require('./dir')
+
+const ERROR = {
+  PROJECT_EXISTS: new Error('Project already exists')
+, MISSING_PARAMETER: new Error('Missing parameters')
+, PROJECT_NOT_FOUND: new Error('Project Not Found')
+}
 
 class ProjectManager extends EventEmitter {
   constructor(info) {
@@ -17,12 +25,14 @@ class ProjectManager extends EventEmitter {
     // this._loadProjects()
   }
 
-  createProject(info, cb) {
-    console.log('inside create')
-    this.store.find(_.pick(info, ['name', 'owner', 'type']), (err, found) => {
-      // console.log(err, found)
-      if (found.length > 0) utils.error('Project already exists', cb)
-    })
+  async _projectExists(info) {
+    return await this.store.find(_.pick(info, ['name', 'owner', 'type']))
+  }
+
+  async createProject(info) {
+    debug('inside create')
+    if (await this._projectExists(info))
+      throw ERROR.PROJECT_EXISTS
 
     let project = {
       name: info.name
@@ -30,156 +40,64 @@ class ProjectManager extends EventEmitter {
     , type: info.type
     , dir: path.join(this.projectDir, info.owner, info.type, info.name)
     , ignore: fs.readFileSync(
-                path.join(this.tplDir, info.type, 'project.ignore')
-              ).toString().split('\n').filter((pattern)=>{
-                return pattern.length > 0
-              })
-    , files: []
+        path.join(this.tplDir, info.type, 'project.ignore')
+      ).toString().split('\n').filter((pattern)=>{
+        return pattern.length > 0
+      })
+    , layout: {}
     }
 
-    let tplDir = path.join(this.tplDir, info.type, info.tpl || 'default')
-    // console.log(tplDir)
-    walk.walk(tplDir, {})
-    .on('file', (root, fileStats, next)=>{
-      let fileRoot = path.relative(root, tplDir)
-        , fileName = fileStats.name.replace(info.tpl, project.name)
-      // console.log(fileRoot, fileName, path.join(root, fileStats.name), path.join( project.dir, fileRoot, fileName))
-      fs.copy(
-        path.join(root, fileStats.name)
-      , path.join( project.dir, fileRoot, fileName)
-      , (err)=>{
-          console.log('copy finished')
-          if (!err) {
-            project.files.push({
-              root: fileRoot
-            , name: fileName
-            })
-            next()
-          }
-          else utils.error(err, cb)
-        }
-      )
-    })
-    .on('end', ()=>{
-      console.log('walking end')
-      console.log(_.pick(project, 'name', 'type', 'owner', 'files'))
-      fs.writeJson(
-        path.join(project.dir, 'project.json')
-      , _.pick(project, 'name', 'type', 'owner', 'ignore')
-      , ()=>{
-          this.store.add(project, cb)
-        }
-      )
-    })
-  }
+    await fs.copyAsync(
+      path.join(this.tplDir, info.type, info.tpl || 'default')
+    , project.dir
+    )
 
-  findProject(info, cb) {
-    this.store.find(info, cb)
-  }
-
-  renameProject(info, newName, cb) {
-    if (!utils.checkKeys(info, ['name', 'owner', 'type'])) {
-      return utils.error('Missing parameters', cb)
+    let d = new DirMan(project.dir)
+    for (var file of d.select(`/**/*${info.tpl}*`)) {
+      await d.rename(file, file.replace(info.tpl, project.name))
     }
-    if (this._findProject({name: newName})) {
-      return utils.error('The new name is already taken', cb)
-    }
+    project.layout = d.getJson(project.ignore)
 
-    let project = this._findProject({name: info.name})
-    if (!project) return utils.error('Project does not exists', cb)
+    await fs.writeJsonAsync(
+      path.join(project.dir, 'project.json')
+    , _.pick(project, ['name', 'type', 'dir', 'owner', 'layout'])
+    )
 
-    let newDir = path.join(project.dir, '..', newName)
-    fs.rename(project.dir, newDir, function (err) {
-      if (!err) {
-        project.name = newName
-        project.dir = newDir
-        if (_.isFunction(cb)) cb(null)
-      }
-      else utils.error(err, cb)
-    })
+    return await this.store.add(project)
   }
 
-  deleteProject(info, cb) {
-    console.log('inside delete')
-    let project = this.findProject(info)
-    if (!project) return utils.error('Project does not exists', cb)
-    console.log('to delete', project)
-    fs.remove(project.dir, (err)=>{
-      if (err) return utils.error(err, cb)
-      // _.remove(this.projects, project)
-      this.store.delete(info)
-      console.log('removed')
-      if (_.isFunction(cb)) cb(null)
-      console.log(this.projects)
-    })
+  findProject(info) {
+    return this.store.findOne(info)
   }
 
-  getJson(info, cb) {
-    let project = this._findProject(info)
-    if (!project) return utils.error('Project does not exists')
+  async renameProject(info, newName) {
+    if (!utils.checkKeys(info, ['name', 'owner', 'type']))
+      throw ERROR.MISSING_PARAMETER
 
-    if (_.isFunction(cb)) cb (_.pick(project, ['name', 'type', 'owner', 'files']))
+    if (await this._projectExists({name: newName, owner: info.owner, type: info.type}))
+      throw ERROR.PROJECT_EXISTS
+
+    let project = await this.findProject({name: info.name})
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    // let newDir = path.join(project.dir, '..', newName)
+    // fs.rename(project.dir, newDir, function (err) {
+    //   if (!err) {
+    //     project.name = newName
+    //     project.dir = newDir
+    //   }
+    //   utils.error(err, cb)
+    // })
   }
 
-  createFiles(info, files) {
+  async deleteProject(info) {
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
 
-  }
-
-  deleteFiles(info, files) {
-
-  }
-
-  updateFiles(info, files) {
-
-  }
-
-  _findTpl(type, name) {
-
-  }
-
-  _findProject(info) {
-    return utils.checkKeys(info, ['name', 'owner', 'type']) ?
-               _.find(this.projects, info) : null
-  }
-
-  _loadProjects() {
-    walk.walk(this.projectDir, {})
-    .on('file', (root, fileStats, next)=>{
-      if (fileStats.name === 'project.json') {
-        this._loadProject(root, next)
-      }
-      else next()
-    })
-    .on('end', ()=>{
-      this.emit('ready')
-    })
-  }
-
-  _loadProject(dir, cb) {
-    let project = fs.readJsonSync(path.join(dir, 'project.json'))
-    project.files = []
-    project.dir = dir
-    let ig = ignore().addPattern(project.ignore)
-    walk.walk(dir, {})
-    .on('files', (root, fileStats, next)=>{
-      project.files.concat(
-        ig.filter(
-          fileStats.map((file)=>{
-            return path.relative(dir, path.join(root, file.name))
-          })
-        ).map((file)=>{
-          return {
-            name: path.basename(file)
-          , root: path.dirname(file)
-          }
-        })
-      )
-      next()
-    })
-    .on('end', ()=>{
-      this.projects.push(project)
-      if (_.isFunction(cb)) cb()
-    })
+    await fs.removeAsync(project.dir)
+    return await this.store.delete(info)
   }
 }
 

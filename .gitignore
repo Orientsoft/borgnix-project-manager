@@ -29,3 +29,5 @@ node_modules
 temp
 nedb
 test-app
+tmp
+lib

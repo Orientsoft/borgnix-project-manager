@@ -1,26 +1,25 @@
 'use strict'
 
-let ProjectManager = require('../src/project-manager')
-  , NedbStore = require('../src/store/nedb')
+let ProjectManager = require('../lib/project-manager')
+  , NedbStore = require('../lib/store/nedb')
   , path = require('path')
   , chai = require('chai')
   , expect = chai.expect
+  , debug = require('debug')('debug')
 
 let pm, store
 
 describe('Project manager with nedb store', () => {
   describe('init', () => {
     it('should init without error', (done) => {
-      // console.log(done)
+      // debug(done)
       store = new NedbStore('./nedb/pm-test')
-      store.start(() => {
-        pm = new ProjectManager({
-          projectDir: path.join(__dirname, '../temp')
-        , tplDir: path.join(__dirname, '../project-tpl')
-        , store: store
-        })
-        done()
+      pm = new ProjectManager({
+        projectDir: path.join(__dirname, '../temp')
+      , tplDir: path.join(__dirname, '../project-tpl')
+      , store: store
       })
+      done()
     })
   })
 
@@ -32,9 +31,22 @@ describe('Project manager with nedb store', () => {
       , owner: 'uuid'
       , tpl: 'default'
       }
-      pm.createProject(project, (err) => {
-        console.log('done')
-        expect(err).to.not.exists
+      pm.createProject(project).then(() => {
+        done()
+      }).catch((err) => {
+        throw err
+        done()
+      })
+    })
+  })
+
+  describe('find', () => {
+    it('should find the project named test', (done) => {
+      pm.findProject({name: 'test', type: 'arduino', owner: 'uuid'}).then((res) => {
+        expect(res).to.exists
+        done()
+      }).catch((err) => {
+        throw err
         done()
       })
     })
@@ -47,9 +59,11 @@ describe('Project manager with nedb store', () => {
       , type: 'arduino'
       , owner: 'uuid'
       }
-      pm.deleteProject(project, (err) => {
-        expect(err).to.not.exists
-        console.log('finishing delete', err)
+      pm.deleteProject(project).then((res) => {
+        console.log('delete finished', res)
+        done()
+      }).catch((err) => {
+        throw err
         done()
       })
     })
