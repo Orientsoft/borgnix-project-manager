@@ -15,6 +15,7 @@ var pm = new ProjectManager({
 
 async function Main() {
   try {
+    console.log(pm.getTemplates('arduino'))
     await pm.deleteProject({
       name: 'atest', 'type': 'arduino', 'owner': 'uuid'
     })

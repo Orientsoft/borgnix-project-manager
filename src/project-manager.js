@@ -168,14 +168,20 @@ class ProjectManager extends EventEmitter {
       throw ERROR.PROJECT_NOT_FOUND
 
     let d = new DirMan(project.dir)
-    return d.select('/**')
-      .filter(ingore().addPattern(project.ignore).createFilter())
+    return d.select('/**', {nodir: true})
+      .filter(ignore().addPattern(project.ignore).createFilter())
       .map((filename) => {
          return {
            path: filename
          , content: d.getContent(filename)
          }
        })
+  }
+
+  getTemplates(type) {
+    return fs.readdirSync(path.join(this.tplDir, type)).filter((dir) => {
+      return dir !== 'project.ignore'
+    })
   }
 
   // TODO: Add renameFile(info, file, newName)
