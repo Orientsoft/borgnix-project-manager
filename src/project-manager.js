@@ -22,15 +22,32 @@ class ProjectManager extends EventEmitter {
     this.projectDir = info.projectDir
     this.tplDir = info.tplDir
     this.store = info.store
-    // this._loadProjects()
   }
 
   async _projectExists(info) {
-    return await this.store.find(_.pick(info, ['name', 'owner', 'type']))
+    return await this.store.findOne(_.pick(info, ['name', 'owner', 'type']))
+  }
+
+  async _updateProjectJson(project) {
+    debug('inside _updateProjectJson', path.join(project.dir, 'project.json'))
+    await fs.writeJsonAsync(
+      path.join(project.dir, 'project.json')
+    , _.pick(project, ['name', 'type', 'dir', 'owner', 'layout'])
+    )
+  }
+
+  async _updateProject(project) {
+    debug('inside _updateProject', project)
+    let d = new DirMan(project.dir)
+    project.layout = d.getJson(project.ignore)
+    this._updateProjectJson(project)
+    await this.store.update(
+      _.pick(project, ['name', 'type', 'owner'])
+    , project
+    )
   }
 
   async createProject(info) {
-    debug('inside create')
     if (await this._projectExists(info))
       throw ERROR.PROJECT_EXISTS
 
@@ -53,45 +70,29 @@ class ProjectManager extends EventEmitter {
     )
 
     let d = new DirMan(project.dir)
-    for (var file of d.select(`/**/*${info.tpl}*`)) {
+    for (var file of d.select(`/**/*${info.tpl}*`))
       await d.rename(file, file.replace(info.tpl, project.name))
-    }
+
     project.layout = d.getJson(project.ignore)
 
-    await fs.writeJsonAsync(
-      path.join(project.dir, 'project.json')
-    , _.pick(project, ['name', 'type', 'dir', 'owner', 'layout'])
-    )
+    await this._updateProjectJson(project)
 
     return await this.store.add(project)
   }
 
   findProject(info) {
+    info = _.pick(info, ['name', 'type', 'owner'])
     return this.store.findOne(info)
   }
 
-  async renameProject(info, newName) {
-    if (!utils.checkKeys(info, ['name', 'owner', 'type']))
-      throw ERROR.MISSING_PARAMETER
-
-    if (await this._projectExists({name: newName, owner: info.owner, type: info.type}))
-      throw ERROR.PROJECT_EXISTS
-
-    let project = await this.findProject({name: info.name})
-    if (!project)
-      throw ERROR.PROJECT_NOT_FOUND
-
-    // let newDir = path.join(project.dir, '..', newName)
-    // fs.rename(project.dir, newDir, function (err) {
-    //   if (!err) {
-    //     project.name = newName
-    //     project.dir = newDir
-    //   }
-    //   utils.error(err, cb)
-    // })
+  findProjects(info) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    return this.store.find(info)
   }
 
   async deleteProject(info) {
+    debug('inside delete')
+    info = _.pick(info, ['name', 'type', 'owner'])
     let project = await this.findProject(info)
     if (!project)
       throw ERROR.PROJECT_NOT_FOUND
@@ -99,6 +100,85 @@ class ProjectManager extends EventEmitter {
     await fs.removeAsync(project.dir)
     return await this.store.delete(info)
   }
+
+  // TODO: Add renameProject(info, newName)
+
+  async createFiles(info, files) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    files = files instanceof Array ? files : [files]
+
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    let d = new DirMan(project.dir)
+    for (var file of files)
+      await d.createFile(file.name, file.content)
+
+    await this._updateProject(project)
+  }
+
+  async createDirs(info, dirs) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    dirs = dirs instanceof Array ? dirs : [dirs]
+
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    let d = new DirMan(project.dir)
+    for (var dir of dirs)
+      await d.createDir(dir)
+
+    await this._updateProject(project)
+  }
+
+  async deleteFiles(info, files) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    files = files instanceof Array ? files : [files]
+
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    let d = new DirMan(project.dir)
+    for (var file of files)
+      await d.remove(file)
+
+    await this._updateProject(project)
+  }
+
+  async updateFiles(info, files) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    files = files instanceof Array ? files : [files]
+
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    let d = new DirMan(project.dir)
+    for (var file of files)
+      await d.update(file.name, file.content)
+  }
+
+  async getFiles(info) {
+    info = _.pick(info, ['name', 'type', 'owner'])
+    let project = await this.findProject(info)
+    if (!project)
+      throw ERROR.PROJECT_NOT_FOUND
+
+    let d = new DirMan(project.dir)
+    return d.select('/**')
+      .filter(ingore().addPattern(project.ignore).createFilter())
+      .map((filename) => {
+         return {
+           path: filename
+         , content: d.getContent(filename)
+         }
+       })
+  }
+
+  // TODO: Add renameFile(info, file, newName)
 }
 
 module.exports = ProjectManager

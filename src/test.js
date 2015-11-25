@@ -22,11 +22,25 @@ async function Main() {
       name: 'atest', type: 'arduino', 'owner': 'uuid', tpl: 'default'
     })
 
-    var doc = await pm.findProject({
+    var project = await pm.findProject({
       name: 'atest', 'type': 'arduino', 'owner': 'uuid'
     })
 
-    console.log('OH', doc)
+    var files = [
+      {name: 'in_root.ino', content: ''}
+    , {name: 'sub/in_sub.ino', content: ''}
+    , {name: 'to_delete.ino', content: ''}
+    ]
+
+    await pm.createFiles(project, files)
+
+    await pm.updateFiles(project, {
+      name: 'in_root.ino'
+    , content: 'changed'
+    })
+    await pm.createDirs(project, ['new_dir', 'dir_to_delete'])
+
+    await pm.deleteFiles(project, ['to_delete.ino', 'dir_to_delete'])
   } catch (e) {
     console.log('ERROR', e)
   }

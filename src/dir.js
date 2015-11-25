@@ -4,7 +4,6 @@ let path = require('path')
   , fsp = require('fs-extra-promise')
   , fs = require('fs')
   , glob = require('glob')
-  // , dirTree = require('directory-tree').directoryTree
   , ignore = require('ignore')
 
 class DirMan {
@@ -14,34 +13,36 @@ class DirMan {
   }
 
   select(selector, opts) {
-    console.log('inside select', selector)
     opts = opts || {}
     opts.root = this.root
-    console.log(opts.root)
     return glob.sync(selector, opts)
   }
 
-  updateFile(filename, newContent, cb) {
-    fsp.outputFile(path.join(this.root, filename), newContent, cb)
+  update(filename, newContent) {
+    return fsp.outputFileAsync(path.join(this.root, filename), newContent)
   }
 
-  remove(selector, cb) {
-    fsp.remove(path.join(this.root, selector), cb)
+  remove(selector) {
+    return fsp.removeAsync(path.join(this.root, selector))
   }
 
-  rename(oldName, newName, cb) {
+  rename(oldName, newName) {
     return fsp.moveAsync(
       path.resolve(this.root, oldName)
     , path.resolve(this.root, newName)
     )
   }
 
-  createFile(filename, content, cb) {
-    fsp.outputFile(path.join(this.root, filename), content, cb)
+  createFile(filename, content) {
+    return fsp.outputFileAsync(path.join(this.root, filename), content)
   }
 
-  createDir(dirname, cb) {
-    fsp.mkdirp(path.join(this.root, dirname), cb)
+  createDir(dirname) {
+    return fsp.mkdirpAsync(path.join(this.root, dirname))
+  }
+
+  getContent(filename) {
+    return fs.readFileSync(filename)
   }
 
   getJson(ignorePattern) {
