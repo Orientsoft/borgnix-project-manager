@@ -23,6 +23,7 @@ router.put('/project', async function (req, res) {
   , name: req.body.name
   , tpl: req.body.tpl
   }
+  console.log(req.body)
   try {
     let project = await pm.createProject(info)
     project.files = await pm.getFiles(project)
@@ -54,12 +55,14 @@ router.delete('/project', async function (req, res) {
 router.get('/projects', async function (req, res) {
   let info = {
     owner: req.session.user.uid
-  , type: req.body.type
+  , type: req.query.type
   }
   try {
     let projects = await pm.findProjects(info)
     for (let project of projects) {
       project.files = await pm.getFiles(project)
+      delete project.dir
+      delete project.ignore
     }
     res.json({status: 0, content: projects})
   } catch (e) {
@@ -155,12 +158,10 @@ module.exports = function (config) {
   else
     throw new Error('config.arduinoLibs is missing')
 
-  var store = new NedbStore('nedb/projects')
-
   pm = new ProjectManager({
     projectDir: config.projectRoot
   , tplDir: path.join(__dirname, '../project-tpl')
-  , store: store
+  , store: config.store
   })
 
   if (_.isFunction(opt.auth)) validation = config.auth

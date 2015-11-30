@@ -113,7 +113,7 @@ class ProjectManager extends EventEmitter {
 
     let d = new DirMan(project.dir)
     for (var file of files)
-      await d.createFile(file.name, file.content)
+      await d.createFile(file.path, file.content)
 
     await this._updateProject(project)
   }
@@ -171,11 +171,11 @@ class ProjectManager extends EventEmitter {
     return d.select('/**', {nodir: true})
       .filter(ignore().addPattern(project.ignore).createFilter())
       .map((filename) => {
-         return {
-           path: filename
-         , content: d.getContent(filename)
-         }
-       })
+        return {
+          path: path.relative(project.dir, filename)
+          , content: d.getContent(filename)
+        }
+      })
   }
 
   getTemplates(type) {
