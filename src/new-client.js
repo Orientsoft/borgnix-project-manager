@@ -6,6 +6,15 @@ class Client {
     this.prefix = opts.prefix || ''
   }
 
+  _jsonReq(method, name, opts) {
+    return $.ajax({
+      url: this._url(name)
+    , method: method
+    , data: JSON.stringify(opts)
+    , contentType: 'application/json'
+    })
+  }
+
   _url(action) {
     return this.prefix + Client.endpoints[action]
   }
@@ -18,31 +27,36 @@ class Client {
     })
   }
 
-  createProject(opts) {
+  listTpls(opts) {
     return $.ajax({
-      url: this._url('createProject')
-    , method: 'PUT'
-    , data: JSON.stringify(opts)
-    , contentType: 'application/json'
+      url: this._url('listTpls')
+    , method: 'GET'
+    , data: opts
     })
+  }
+
+  createProject(opts) {
+    return this._jsonReq('PUT', 'createProject', opts)
   }
 
   deleteProject(opts) {
-    return $.ajax({
-      url: this._url('deleteProject')
-    , method: 'DELETE'
-    , data: JSON.stringify(opts)
-    , contentType: 'application/json'
-    })
+    return this._jsonReq('DELETE', 'deleteProject', opts)
   }
 
   createFile(opts) {
-    return $.ajax({
-      url: this._url('createFiles')
-    , method: 'PUT'
-    , data: JSON.stringify(opts)
-    , contentType: 'application/json'
-    })
+    return this._jsonReq('PUT', 'createFiles', opts)
+  }
+
+  updateFiles(opts) {
+    return this._jsonReq('POST', 'updateFiles', opts)
+  }
+
+  deleteFiles(opts) {
+    return this._jsonReq('DELETE', 'deleteFiles', opts)
+  }
+
+  createDirs(opts) {
+    return this._jsonReq('PUT', 'createDirs', opts)
   }
 }
 

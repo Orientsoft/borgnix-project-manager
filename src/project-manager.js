@@ -158,7 +158,7 @@ class ProjectManager extends EventEmitter {
 
     let d = new DirMan(project.dir)
     for (var file of files)
-      await d.update(file.name, file.content)
+      await d.update(file.path, file.content)
   }
 
   async getFiles(info) {

@@ -23,7 +23,6 @@ router.put('/project', async function (req, res) {
   , name: req.body.name
   , tpl: req.body.tpl
   }
-  console.log(req.body)
   try {
     let project = await pm.createProject(info)
     project.files = await pm.getFiles(project)
@@ -111,7 +110,7 @@ router.post('/project/files', async function (req, res) {
   , name: req.body.name
   }
   try {
-    await pm.updateFiles(info, req.body.dirs)
+    await pm.updateFiles(info, req.body.files)
     res.json({status: 0})
   } catch (e) {
     console.log(e.stack)
@@ -127,7 +126,7 @@ router.delete('/project/files', async function (req, res) {
   , name: req.body.name
   }
   try {
-    await pm.deleteFiles(info, req.body.dirs)
+    await pm.deleteFiles(info, req.body.files)
     res.json({status: 0})
   } catch (e) {
     console.log(e.stack)
