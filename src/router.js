@@ -78,8 +78,8 @@ router.put('/project/files', async function (req, res) {
   , name: req.body.name
   }
   try {
-    await pm.createFiles(info, req.body.files)
-    res.json({status: 0})
+    let project = await pm.createFiles(info, req.body.files)
+    res.json({status: 0, content: project.layout})
   } catch (e) {
     console.log(e.stack)
     res.json({status: 1, content: e.toString()})
@@ -94,8 +94,8 @@ router.put('/project/dirs', async function (req, res) {
   , name: req.body.name
   }
   try {
-    await pm.createDirs(info, req.body.dirs)
-    res.json({status: 0})
+    let project = await pm.createDirs(info, req.body.dirs)
+    res.json({status: 0, content: project.layout})
   } catch (e) {
     console.log(e.stack)
     res.json({status: 1, content: e.toString()})
@@ -126,8 +126,8 @@ router.delete('/project/files', async function (req, res) {
   , name: req.body.name
   }
   try {
-    await pm.deleteFiles(info, req.body.files)
-    res.json({status: 0})
+    let project = await pm.deleteFiles(info, req.body.files)
+    res.json({status: 0, content: project.layout})
   } catch (e) {
     console.log(e.stack)
     res.json({status: 1, content: e.toString()})

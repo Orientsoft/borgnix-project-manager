@@ -45,6 +45,7 @@ class ProjectManager extends EventEmitter {
       _.pick(project, ['name', 'type', 'owner'])
     , project
     )
+    return project
   }
 
   async createProject(info) {
@@ -115,7 +116,7 @@ class ProjectManager extends EventEmitter {
     for (var file of files)
       await d.createFile(file.path, file.content)
 
-    await this._updateProject(project)
+    return await this._updateProject(project)
   }
 
   async createDirs(info, dirs) {
@@ -130,7 +131,7 @@ class ProjectManager extends EventEmitter {
     for (var dir of dirs)
       await d.createDir(dir)
 
-    await this._updateProject(project)
+    return await this._updateProject(project)
   }
 
   async deleteFiles(info, files) {
@@ -145,7 +146,7 @@ class ProjectManager extends EventEmitter {
     for (var file of files)
       await d.remove(file)
 
-    await this._updateProject(project)
+    return await this._updateProject(project)
   }
 
   async updateFiles(info, files) {
