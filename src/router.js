@@ -138,8 +138,8 @@ router.delete('/project/files', async function (req, res) {
 router.get('/templates', function (req, res) {
   // IMPORTTANT
   // TODO: check req.body.type to prevent insertion attack
-  if (req.body.type) {
-    res.json({status: 0, content: pm.getTemplates(req.body.type)})
+  if (req.query.type) {
+    res.json({status: 0, content: pm.getTemplates(req.query.type)})
   } else {
     res.json({status: 1})
   }
