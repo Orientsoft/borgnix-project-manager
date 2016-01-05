@@ -42,7 +42,7 @@ class DirMan {
   }
 
   getContent(filename) {
-    return fs.readFileSync(filename)
+    return fs.readFileSync(filename).toString()
   }
 
   getJson(ignorePattern) {
